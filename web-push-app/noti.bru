@@ -1,0 +1,21 @@
+meta {
+  name: noti
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://10.1.1.163:3000/api/module/:moduleId/activity
+  body: json
+  auth: none
+}
+
+params:path {
+  moduleId: 1
+}
+
+body:json {
+  {
+    "activityMessage": "mas"
+  }
+}

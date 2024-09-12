@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "web-push-app",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
