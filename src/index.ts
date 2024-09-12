@@ -103,6 +103,11 @@ app.post("/api/module/:moduleId/activity", async (req, res) => {
     res.status(200).json({ message: "notificaciones enviadas", activityMessage })
 })
 
+app.get("/ping", async (req, res) => {
+    io.emit("nada", { nada: "nada" })
+    res.status(200).json({ message: "nada" })
+})
+
 server.listen(PORT, () => {
     console.log("running");
 })

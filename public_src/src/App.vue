@@ -2,9 +2,11 @@
 import { onMounted, ref } from "vue";
 import io from "socket.io-client"
 import TryForm from './components/TryForm.vue'
+import DesktopNotifications from "./components/DesktopNotifications.vue"
 
 const notifications = ref(["1", "2"])
-const socket = io("http://10.1.1.163:3000")
+const socketEndpoint = import.meta.env.VITE_MAIN_SOCKET
+const socket = io(socketEndpoint)
 
 onMounted(() => {
   const userId = "1"
@@ -12,7 +14,7 @@ onMounted(() => {
   socket.on("notification", (data) => {
     notifications.value.push(data)
   })
-  fetch(`http://10.1.1.163:3000/api/notification/${userId}`)
+  fetch(`${socketEndpoint}/api/notification/${userId}`)
     .then(response => response.json())
     .then(data => {
       notifications.value = data
@@ -21,6 +23,7 @@ onMounted(() => {
 </script>
 
 <template>
+  <DesktopNotifications></DesktopNotifications>
   <TryForm></TryForm>
   <div class="notification-system">
     <h2>Notis</h2>

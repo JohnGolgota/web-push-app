@@ -1,0 +1,17 @@
+meta {
+  name: ping
+  type: http
+  seq: 4
+}
+
+get {
+  url: http://10.1.1.163:3000/ping
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "activityMessage": "mas"
+  }
+}

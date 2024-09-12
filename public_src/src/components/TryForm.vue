@@ -1,11 +1,13 @@
 <script lang="ts" setup>
 import { ref } from "vue"
 
+const socketEndpoint = import.meta.env.VITE_MAIN_SOCKET
+
 const mesInput = ref()
 const quienInput = ref()
 
 const onS = async (e) => {
-    const url = `http://10.1.1.163:3000/api/module/1/activity`;
+    const url = `${socketEndpoint}/api/module/1/activity`;
     const options = {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -17,7 +19,6 @@ const onS = async (e) => {
     try {
         const response = await fetch(url, options);
         const data = await response.json();
-        console.log(data);
     } catch (error) {
         console.error(error);
     }
