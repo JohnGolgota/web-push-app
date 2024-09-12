@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import io from "socket.io-client"
-import TryForm from "./components/TryForm.vue"
+import TryForm from './components/TryForm.vue'
 
 const notifications = ref(["1", "2"])
 const socket = io("http://10.1.1.163:3000")
