@@ -113,11 +113,12 @@ app.post("/api/toggle-notifications", async (req, res) => {
     }
 })
 
-app.get("api/notifications-status/:userId", async (req, res) => {
+app.get("/api/notifications-status/:userId", async (req, res) => {
     const userId = parseInt(req.params.userId)
     try {
         const userRepository = AppDataSource.getRepository(User)
         const user = await userRepository.findOneBy({ id: userId })
+        console.log("user:")
         if (!user) {
             return res.status(404).json({ error: "no user" })
         }

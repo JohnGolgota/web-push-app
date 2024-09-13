@@ -1,0 +1,22 @@
+meta {
+  name: notification status
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{process.env.VITE_MAIN_SOCKET}}/api/notifications-status/:userId
+  body: none
+  auth: none
+}
+
+params:path {
+  userId: 1
+}
+
+body:json {
+  {
+    "userId": "2",
+    "message": "mesaje para 2"
+  }
+}
