@@ -47,7 +47,6 @@ onUnmounted(() => {
 })
 </script>
 <template>
-    {{ userId }}
     <div class="notification-system">
         <h2>Notis</h2>
         <ul>

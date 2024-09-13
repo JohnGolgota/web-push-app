@@ -1,0 +1,18 @@
+meta {
+  name: api-send-notification
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{process.env.VITE_MAIN_SOCKET}}/api/send-notification
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "userId":"2",
+    "message":"mesaje para 2"
+  }
+}
