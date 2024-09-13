@@ -1,10 +1,10 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 import { Notification } from "./Notification"
+import { Subscription } from "./Subscription"
 import { UserModule } from "./UserModule"
 
 @Entity()
 export class User {
-
     @PrimaryGeneratedColumn()
     id: number
 
@@ -23,4 +23,6 @@ export class User {
     @OneToMany(() => Notification, notification => notification.user)
     notifications: Notification[]
 
+    @OneToMany(() => Subscription, subscription => subscription.subscriber)
+    subscriptions: Subscription[]
 }
