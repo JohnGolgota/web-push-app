@@ -92,6 +92,7 @@
         "[php]": {
             "editor.defaultFormatter": "DEVSENSE.phptools-vscode",
         },
+        "cSpell.language": "en,es-ES",
     },
     "extensions": {
         "recommendations": [

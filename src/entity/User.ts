@@ -1,6 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm"
-import { UserModule } from "./UserModule"
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 import { Notification } from "./Notification"
+import { UserModule } from "./UserModule"
 
 @Entity()
 export class User {
@@ -14,10 +14,13 @@ export class User {
     @Column()
     email: string
 
+    @Column({ default: true })
+    notificationsEnabled: boolean
+
     @OneToMany(() => UserModule, userModule => userModule.user)
     userModules: UserModule[]
 
     @OneToMany(() => Notification, notification => notification.user)
     notifications: Notification[]
-    
+
 }

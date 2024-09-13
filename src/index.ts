@@ -62,6 +62,11 @@ async function sendNotification(userId: number, message: string) {
             throw new Error("Usuario no encontrado");
         }
 
+        if (!user.notificationsEnabled) {
+            console.log("Notificaciones desactivadas para el usuario");
+            return;
+        }
+
         const notification = new Notification()
         notification.user = user
         notification.message = message
@@ -91,6 +96,36 @@ async function notifyModuleActivity(moduleId: number, activityMessage: string) {
         console.error("fail 2", error);
     }
 }
+
+app.post("/api/toggle-notifications", async (req, res) => {
+    const { userId, enabled } = req.body
+    try {
+        const userRepository = AppDataSource.getRepository(User)
+        const user = await userRepository.findOneBy({ id: userId })
+        if (!user) {
+            return res.status(404).json({ error: "usuario no encontrado" })
+        }
+        user.notificationsEnabled = enabled
+        await userRepository.save(user)
+        res.status(200).json({ message: `Notificaciones ${enabled ? "activas" : "desactivadas"}` })
+    } catch (error) {
+        res.status(404).json({ error: "Error al cambiar el estado de las notificaciones del usuario" })
+    }
+})
+
+app.get("api/notifications-status/:userId", async (req, res) => {
+    const userId = parseInt(req.params.userId)
+    try {
+        const userRepository = AppDataSource.getRepository(User)
+        const user = await userRepository.findOneBy({ id: userId })
+        if (!user) {
+            return res.status(404).json({ error: "no user" })
+        }
+        res.json({ notificationsEnabled: user.notificationsEnabled })
+    } catch (error) {
+        res.status(500).json({ error: "Error al obtener datos" })
+    }
+})
 
 app.post("/api/send-notification", async (req, res) => {
     const { userId, message } = req.body
