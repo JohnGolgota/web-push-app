@@ -9,7 +9,7 @@ const currentUserId = ref("1")
 </script>
 
 <template>
-    <DesktopNotifications></DesktopNotifications>
+    <DesktopNotifications :userId="currentUserId" :key="currentUserId"></DesktopNotifications>
     <TryForm></TryForm>
     <NotificationSystem :userId="currentUserId" :key="currentUserId"></NotificationSystem>
     <input type="text" v-model="currentUserId">

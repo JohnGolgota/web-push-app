@@ -2,10 +2,16 @@
 import { ref, onMounted } from "vue"
 import { io, Socket } from "socket.io-client"
 
+const props = defineProps({
+    userId: {
+        type: String,
+        required: true
+    }
+})
+
 const permissionGranted = ref(false)
 const socketEndpoint = import.meta.env.VITE_MAIN_SOCKET
-const socket: Socket = io(socketEndpoint)
-socket.emit("join", 1)
+let socket: Socket
 
 const requestPermission = async () => {
     try {
@@ -37,6 +43,11 @@ const initializeSocketListener = () => {
 }
 onMounted(() => {
     console.log("inicio")
+    socket = io(socketEndpoint)
+    socket.on("connect", () => {
+        socket.emit("authenticate", props.userId)
+    })
+
     permissionGranted.value = Notification.permission === "granted"
     if (permissionGranted.value) {
         console.log("comienzo")
