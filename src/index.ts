@@ -2,7 +2,7 @@ import * as cors from "cors"
 import * as express from "express"
 import { createServer } from "http"
 import "reflect-metadata"
-import { Server as SockerServer } from "socket.io"
+import { Server as SocketServer } from "socket.io"
 import { AppDataSource } from "./data-source"
 import { Module } from "./entity/Module"
 import { Notification } from "./entity/Notification"
@@ -16,7 +16,7 @@ app.use(express.json())
 app.use(express.static('public'))
 
 const server = createServer(app)
-const io = new SockerServer(server, {
+const io = new SocketServer(server, {
     cors: {
         origin: "*",
         methods: ["GET", "POST"],
