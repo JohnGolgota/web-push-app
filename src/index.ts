@@ -4,6 +4,7 @@ import { createServer } from "http"
 import "reflect-metadata"
 import { Server as SockerServer } from "socket.io"
 import { AppDataSource } from "./data-source"
+import { Module } from "./entity/Module"
 import { Notification } from "./entity/Notification"
 import { Subscription } from "./entity/Subscription"
 import { User } from "./entity/User"
@@ -113,6 +114,55 @@ async function notifyModuleActivity(moduleId: number, activityMessage: string) {
     }
 }
 
+app.post("/api/activity", async (req, res) => {
+    const { userId, moduleId, message } = req.body
+    await notifySubscribers(userId, moduleId, message)
+    res.status(200).json({ message: "Actividad registrada y notificaciones enviadas" })
+})
+
+app.post("/api/subscribe", async (req, res) => {
+    const { subscribeId, subscribedToUserId, subscribedToModuleId } = req.body
+    try {
+        const subscriptionRepository = AppDataSource.getRepository(Subscription)
+        const userRepository = AppDataSource.getRepository(User)
+        const moduleRepository = AppDataSource.getRepository(Module)
+
+        const subscriber = await userRepository.findOneBy({ id: subscribeId })
+        if (!subscriber) {
+            return res.status(404).json({ error: "Suscriptor no encontrado" })
+        }
+
+        let subscribedToUser = null
+        let subscribedToModule = null
+
+        if (subscribedToUserId) {
+            subscribedToUser = await userRepository.findOneBy({ id: subscribedToUserId })
+            if (!subscribedToUser) {
+                return res.status(404).json({ error: 'Usuario al que suscribirse no encontrado' })
+            }
+        }
+
+        if (subscribedToModuleId) {
+            subscribedToModule = await moduleRepository.findOneBy({ id: subscribedToModuleId });
+            if (!subscribedToModule) {
+                return res.status(404).json({ error: 'Módulo al que suscribirse no encontrado' });
+            }
+        }
+
+        const subscription = new Subscription()
+        subscription.subscriber = subscriber
+        subscription.subscribedToUser = subscribedToUser
+        subscription.subscribedToModule = subscribedToModule
+
+        await subscriptionRepository.save(subscription)
+
+        res.status(200).json({ message: "Subscription creada exitosamente" })
+
+    } catch (error) {
+        res.status(500).json({ error: `fail ${error}` })
+    }
+})
+
 app.post("/api/toggle-notifications", async (req, res) => {
     const { userId, enabled } = req.body
     try {
@@ -142,6 +192,20 @@ app.post("/api/module/:moduleId/activity", async (req, res) => {
 
     await notifyModuleActivity(moduleId, activityMessage)
     res.status(200).json({ message: "notificaciones enviadas", activityMessage })
+})
+
+app.get("/api/subscriptions/:userId", async (req, res) => {
+    const userId = parseInt(req.params.userId)
+    try {
+        const subscriptionRepository = AppDataSource.getRepository(Subscription)
+        const subscriptions = await subscriptionRepository.find({
+            where: { subscriber: { id: userId }, isActive: true },
+            relations: ["subscribedToUser", "subscribedToModule"]
+        })
+        res.json(subscriptions)
+    } catch (error) {
+        res.status(500).json({ error: "Error al obtener las suscripciones" })
+    }
 })
 
 app.get("/api/notifications-status/:userId", async (req, res) => {
@@ -182,13 +246,29 @@ app.get("/api/notification/:userId", async (req, res) => {
         })
         res.json(notifications)
     } catch (error) {
-        res.status(500).json({ error: "Valio monda" })
+        res.status(500).json({ error: "Valió monda" })
     }
 })
 
 app.get("/ping", async (req, res) => {
     io.emit("pong", { message: "pong" })
     res.status(200).json({ message: "pong" })
+})
+
+app.delete("/api/unsubscribe/:subscriptionId", async (req, res) => {
+    const subscriptionId = parseInt(req.params.subscriptionId)
+    try {
+        const subscriptionRepository = AppDataSource.getRepository(Subscription)
+        const subscription = await subscriptionRepository.findOneBy({ id: subscriptionId })
+        if (!subscription) {
+            return res.status(404).json({ error: "Suscripción no encontrada" })
+        }
+        subscription.isActive = false
+        await subscriptionRepository.save(subscription)
+        res.status(200).json({ message: "Subscription desactivada exitosamente" })
+    } catch (error) {
+        res.status(500).json({ error: "Error al desactivar la suscripción" })
+    }
 })
 
 server.listen(PORT, () => {
