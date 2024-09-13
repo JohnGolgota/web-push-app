@@ -5,6 +5,7 @@ import "reflect-metadata"
 import { Server as SockerServer } from "socket.io"
 import { AppDataSource } from "./data-source"
 import { Notification } from "./entity/Notification"
+import { Subscription } from "./entity/Subscription"
 import { User } from "./entity/User"
 import { UserModule } from "./entity/UserModule"
 
@@ -26,21 +27,18 @@ const PORT = process.env.PORT || 3000
 
 AppDataSource.initialize()
     .then(async () => {
-        console.log("Connect");
     })
     .catch(error => {
-        console.log(error);
     })
 
 const userSockets = new Map()
 
 io.on("connection", (socket) => {
-    console.log("usuario conectado");
     socket.on("authenticate", (userId) => {
         userSockets.set(userId, socket.id)
         socket.join(userId.toString())
-        console.log(`Usuario ${userId} autenticado`);
     })
+
     socket.on("disconnect", () => {
         for (let [userId, socketId] of userSockets.entries()) {
             if (socketId === socket.id) {
@@ -48,7 +46,6 @@ io.on("connection", (socket) => {
                 break
             }
         }
-        console.log("Usuario desconectado");
     })
 })
 
@@ -58,12 +55,7 @@ async function sendNotification(userId: number, message: string) {
         const notificationRepository = AppDataSource.getRepository(Notification)
 
         const user = await userRepository.findOneBy({ id: userId })
-        if (!user) {
-            throw new Error("Usuario no encontrado");
-        }
-
-        if (!user.notificationsEnabled) {
-            console.log("Notificaciones desactivadas para el usuario");
+        if (!user || !user.notificationsEnabled) {
             return;
         }
 
@@ -79,6 +71,30 @@ async function sendNotification(userId: number, message: string) {
         }
     } catch (error) {
         console.error("Fail send notification func", error);
+    }
+}
+
+async function notifySubscribers(activityUserId: number, moduleId: number | null, message: string) {
+    const subscriptionRepository = AppDataSource.getRepository(Subscription)
+    let subscribers: Subscription[]
+
+    if (moduleId) {
+        subscribers = await subscriptionRepository.find({
+            where: [
+                { subscribedToModule: { id: moduleId }, isActive: true },
+                { subscribedToUser: { id: activityUserId }, isActive: true }
+            ],
+            relations: ["subscriber"]
+        })
+    } else {
+        subscribers = await subscriptionRepository.find({
+            where: { subscribedToUser: { id: activityUserId }, isActive: true },
+            relations: ["subscriber"]
+        })
+    }
+
+    for (const subscription of subscribers) {
+        await sendNotification(subscription.subscriber.id, message)
     }
 }
 
@@ -113,12 +129,26 @@ app.post("/api/toggle-notifications", async (req, res) => {
     }
 })
 
+app.post("/api/send-notification", async (req, res) => {
+    const { userId, message } = req.body
+    await sendNotification(userId, message)
+    res.status(200).json({ message: "Notificación enviada" })
+})
+
+app.post("/api/module/:moduleId/activity", async (req, res) => {
+    const moduleId = parseInt(req.params.moduleId)
+    const { activityMessage } = req.body
+
+
+    await notifyModuleActivity(moduleId, activityMessage)
+    res.status(200).json({ message: "notificaciones enviadas", activityMessage })
+})
+
 app.get("/api/notifications-status/:userId", async (req, res) => {
     const userId = parseInt(req.params.userId)
     try {
         const userRepository = AppDataSource.getRepository(User)
         const user = await userRepository.findOneBy({ id: userId })
-        console.log("user:")
         if (!user) {
             return res.status(404).json({ error: "no user" })
         }
@@ -126,12 +156,6 @@ app.get("/api/notifications-status/:userId", async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: "Error al obtener datos" })
     }
-})
-
-app.post("/api/send-notification", async (req, res) => {
-    const { userId, message } = req.body
-    await sendNotification(userId, message)
-    res.status(200).json({ message: "Notificación enviada" })
 })
 
 app.get("/api/notifications/:userId", async (req, res) => {
@@ -145,13 +169,11 @@ app.get("/api/notifications/:userId", async (req, res) => {
         })
         res.json(notifications)
     } catch (error) {
-        console.log("/api/notifications/:userId endpoint error:", error)
     }
 })
 
 app.get("/api/notification/:userId", async (req, res) => {
     const userId = parseInt(req.params.userId)
-    console.log(userId);
     try {
         const notificationRepository = AppDataSource.getRepository(Notification)
         const notifications = await notificationRepository.find({
@@ -162,15 +184,6 @@ app.get("/api/notification/:userId", async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: "Valio monda" })
     }
-})
-
-app.post("/api/module/:moduleId/activity", async (req, res) => {
-    const moduleId = parseInt(req.params.moduleId)
-    const { activityMessage } = req.body
-
-
-    await notifyModuleActivity(moduleId, activityMessage)
-    res.status(200).json({ message: "notificaciones enviadas", activityMessage })
 })
 
 app.get("/ping", async (req, res) => {
