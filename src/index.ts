@@ -11,6 +11,8 @@ import { UserModule } from "./entity/UserModule"
 const app = express()
 app.use(cors())
 app.use(express.json())
+app.use(express.static('public'))
+
 const server = createServer(app)
 const io = new SockerServer(server, {
     cors: {
@@ -22,8 +24,6 @@ const io = new SockerServer(server, {
 
 const PORT = process.env.PORT || 3000
 
-app.use(express.static('public'))
-
 AppDataSource.initialize()
     .then(async () => {
         console.log("Connect");
@@ -32,28 +32,23 @@ AppDataSource.initialize()
         console.log(error);
     })
 
-app.get("/api/notification/:userId", async (req, res) => {
-    const userId = parseInt(req.params.userId)
-    console.log(userId);
-    try {
-        const notificationRepository = AppDataSource.getRepository(Notification)
-        const notifications = await notificationRepository.find({
-            where: { user: { id: userId } },
-            relations: ["user"]
-        })
-        res.json(notifications)
-    } catch (error) {
-        res.status(500).json({ error: "Valio monda" })
-    }
-})
+const userSockets = new Map()
 
 io.on("connection", (socket) => {
-    console.log("conectado");
-    socket.on("join", (userId) => {
+    console.log("usuario conectado");
+    socket.on("authenticate", (userId) => {
+        userSockets.set(userId, socket.id)
         socket.join(userId.toString())
+        console.log(`Usuario ${userId} autenticado`);
     })
     socket.on("disconnect", () => {
-        console.log("desconectado");
+        for (let [userId, socketId] of userSockets.entries()) {
+            if (socketId === socket.id) {
+                userSockets.delete(userId)
+                break
+            }
+        }
+        console.log("Usuario desconectado");
     })
 })
 
@@ -73,9 +68,12 @@ async function sendNotification(userId: number, message: string) {
 
         await notificationRepository.save(notification)
 
-        io.to(userId.toString()).emit("notification", { message })
+        const socketId = userSockets.get(userId.toString())
+        if (socketId) {
+            io.to(socketId).emit("notification", { message })
+        }
     } catch (error) {
-        console.error("Fail", error);
+        console.error("Fail send notification func", error);
     }
 }
 
@@ -94,6 +92,42 @@ async function notifyModuleActivity(moduleId: number, activityMessage: string) {
     }
 }
 
+app.post("/api/send-notification", async (req, res) => {
+    const { userId, message } = req.body
+    await sendNotification(userId, message)
+    res.status(200).json({ message: "Notificación enviada" })
+})
+
+app.get("/api/notifications/:userId", async (req, res) => {
+    const userId = parseInt(req.params.userId)
+    try {
+        const notificationRepository = AppDataSource.getRepository(Notification)
+        const notifications = await notificationRepository.find({
+            where: { user: { id: userId } },
+            relations: ["user"],
+            order: { createdAt: "DESC" }
+        })
+        res.json(notifications)
+    } catch (error) {
+        console.log("/api/notifications/:userId endpoint error:", error)
+    }
+})
+
+app.get("/api/notification/:userId", async (req, res) => {
+    const userId = parseInt(req.params.userId)
+    console.log(userId);
+    try {
+        const notificationRepository = AppDataSource.getRepository(Notification)
+        const notifications = await notificationRepository.find({
+            where: { user: { id: userId } },
+            relations: ["user"]
+        })
+        res.json(notifications)
+    } catch (error) {
+        res.status(500).json({ error: "Valio monda" })
+    }
+})
+
 app.post("/api/module/:moduleId/activity", async (req, res) => {
     const moduleId = parseInt(req.params.moduleId)
     const { activityMessage } = req.body
@@ -104,8 +138,8 @@ app.post("/api/module/:moduleId/activity", async (req, res) => {
 })
 
 app.get("/ping", async (req, res) => {
-    io.emit("nada", { nada: "nada" })
-    res.status(200).json({ message: "nada" })
+    io.emit("pong", { message: "pong" })
+    res.status(200).json({ message: "pong" })
 })
 
 server.listen(PORT, () => {
@@ -113,3 +147,4 @@ server.listen(PORT, () => {
 })
 
 export { sendNotification }
+

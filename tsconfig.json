@@ -1,22 +1,22 @@
 {
-   "compilerOptions": {
-      "lib": [
-         "es5",
-         "es6"
-      ],
-      "target": "es5",
-      "module": "commonjs",
-      "moduleResolution": "node",
-      "outDir": "./build",
-      "emitDecoratorMetadata": true,
-      "experimentalDecorators": true,
-      "sourceMap": true
-   },
-   "include": [
-      "src/**/*"
-   ],
-   "exclude": [
-      "node_modules",
-      "dos"
-   ]
+    "compilerOptions": {
+        "lib": [
+            "es5",
+            "es6"
+        ],
+        "target": "ES2023",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "outDir": "./build",
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "sourceMap": true
+    },
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "dos"
+    ]
 }
