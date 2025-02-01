@@ -121,13 +121,13 @@ app.post("/api/activity", async (req, res) => {
 })
 
 app.post("/api/subscribe", async (req, res) => {
-    const { subscribeId, subscribedToUserId, subscribedToModuleId } = req.body
+    const { subscriberId, subscribedToUserId, subscribedToModuleId } = req.body
     try {
         const subscriptionRepository = AppDataSource.getRepository(Subscription)
         const userRepository = AppDataSource.getRepository(User)
         const moduleRepository = AppDataSource.getRepository(Module)
 
-        const subscriber = await userRepository.findOneBy({ id: subscribeId })
+        const subscriber = await userRepository.findOneBy({ id: subscriberId })
         if (!subscriber) {
             return res.status(404).json({ error: "Suscriptor no encontrado" })
         }

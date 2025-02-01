@@ -1,0 +1,19 @@
+meta {
+  name: api activity
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{process.env.VITE_MAIN_SOCKET}}/api/activity
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "userId": "1",
+    "moduleId": "1",
+    "message": "uno uno"
+  }
+}
